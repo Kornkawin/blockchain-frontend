@@ -1,9 +1,16 @@
-import React, { useEffect } from 'react'
-import { AppBar, Toolbar, Typography, Button, Chip, Stack } from '@mui/material';
-import { initializeConnector } from '@web3-react/core'
-import { MetaMask } from '@web3-react/metamask'
+import React, {useEffect, useState} from 'react'
+import {AppBar, Button, Chip, Stack, Toolbar, Typography} from '@mui/material';
+import {initializeConnector} from '@web3-react/core'
+import {MetaMask} from '@web3-react/metamask'
+import { ethers } from 'ethers';
+import { formatEther } from '@ethersproject/units';
+import abi from './abi.json';
+
+// copy from https://testnet.reiscan.com/address/0x04294758F2C9B32854486843992647fcfBCBA5fE
+const contractAddress = '0x04294758F2C9B32854486843992647fcfBCBA5fE'
+
 const [metamask, hooks] = initializeConnector((actions) => new MetaMask(actions))
-const { useAccounts, useIsActive } = hooks
+const { useAccounts, useIsActive, useProvider } = hooks
 const getAddressTxt = (str, s = 6, e = 6) => {
     if (str) {
         return `${str.slice(0, s)}...${str.slice(str.length - e)}`;
@@ -13,9 +20,26 @@ const getAddressTxt = (str, s = 6, e = 6) => {
 function App() {
     const accounts = useAccounts()
     const isActive = useIsActive()
+    const provider = useProvider()
+    const [balance, setBalance] = useState("")
     useEffect(() => {
         void metamask.connectEagerly()
     }, [])
+    useEffect(() => {
+        const fetchBalance = async () => {
+            try {
+                const signer = provider.getSigner()
+                const smartContract = new ethers.Contract(contractAddress, abi, signer)
+                const myBalance = await smartContract.balanceOf(accounts[0])
+                setBalance(formatEther(myBalance))
+            } catch(err) {
+                console.log(err)
+            }
+        }
+        if (isActive) {
+            fetchBalance()
+        }
+    }, [isActive])
     const handleConnect = () => {
         metamask.activate(55556)
     }
@@ -50,6 +74,7 @@ function App() {
                     }
                 </Toolbar>
             </AppBar>
+            { isActive && <div>{balance}</div>}
         </div>
     )
 }
