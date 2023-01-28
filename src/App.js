@@ -31,13 +31,18 @@ function App() {
                 const signer = provider.getSigner()
                 const smartContract = new ethers.Contract(contractAddress, abi, signer)
                 const myBalance = await smartContract.balanceOf(accounts[0])
+                // convert unit from wei to ether
                 setBalance(formatEther(myBalance))
             } catch(err) {
                 console.log(err)
             }
         }
         if (isActive) {
+            // Fetch balance when account status is changed
+            // (inactive -> active)
             fetchBalance()
+        } else {
+            // not fetch balance when account status is inactive
         }
     }, [isActive])
     const handleConnect = () => {
